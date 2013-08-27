@@ -14,9 +14,7 @@ struct http_message
 	{
 		int content;
 		int chunk;
-		//char buf[4096];
-// DEBUG ONLY
-char buf[96];
+		char buf[4096];
 		int size;
 		char *offset;
 		char *last;
