@@ -12,7 +12,7 @@ struct http_message
 	int length;
 	struct
 	{
-		int content;
+		int in_content;
 		int chunk;
 		char buf[4096];
 		int size;

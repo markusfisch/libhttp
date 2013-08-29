@@ -8,6 +8,14 @@
 
 #include "http.h"
 
+#ifndef HTTP_USER_AGENT
+#define HTTP_USER_AGENT "Mozilla/4.0 (Linux)"
+#endif
+
+#ifndef HTTP_TIME_OUT
+#define HTTP_TIME_OUT 360
+#endif
+
 /**
  * Parse URL into protocol, hostname and query part; the returned
  * structure needs to be freed after use
@@ -296,7 +304,7 @@ char *http_parse_message(
 	if( !bod )
 		return bod;
 
-	if( msg->state.content )
+	if( msg->state.in_content )
 		return http_parse_content( msg, bod, eod );
 
 	/* header line is incomplete so fetch more data */
@@ -334,7 +342,7 @@ char *http_parse_message(
 			else
 				bod += 2;
 
-			msg->state.content = 1;
+			msg->state.in_content = 1;
 
 			return http_parse_message( msg, bod, eod );
 		}
@@ -372,17 +380,17 @@ char *http_parse_message(
  */
 int http_read( int sd, struct http_message *msg )
 {
-	int bytes = 0;
-
 	if( !msg )
 		return -1;
 
+	/* first-time initialization */
 	if( !msg->state.offset )
 	{
 		/* initialize size of read buffer;
 		 * reserve a byte for the terminating NULL
 		 * character */
 		msg->state.size = sizeof( msg->state.buf )-1;
+		msg->state.offset = msg->state.buf;
 
 		/* initialize remaining length of chunk;
 		 * -1 means content is not chunked */
@@ -393,85 +401,89 @@ int http_read( int sd, struct http_message *msg )
 		msg->header.length = -1;
 	}
 
-	/* copy unparsed data to the front of the buffer */
-	if( msg->state.left >= msg->state.size )
+	if( msg->state.total == msg->header.length )
+		/* return 0 for keep-alive connections */
+		return 0;
+
+	for( ;; )
 	{
-		/* drop the first half of the buffer if there's no
-		 * space left; this can only happen when a header
-		 * line is bigger than the buffer in which case
-		 * it's probably save to discard it. It's important
-		 * to half it to not to misinterpret the still
-		 * missing CR as end of header signal */
-		int h = msg->state.size/2;
-
-		memcpy(
-			msg->state.buf,
-			msg->state.offset+h,
-			h );
-
-		msg->state.offset = msg->state.buf+h;
-		msg->state.free = msg->state.size-h;
-	}
-	else if( msg->state.left > 0 )
-	{
-		if( msg->state.offset > msg->state.buf )
-			memcpy(
-				msg->state.buf,
-				msg->state.offset,
-				msg->state.left );
-
-		msg->state.offset = msg->state.buf+msg->state.left;
-		msg->state.free = msg->state.size-msg->state.left;
-	}
-	else
-	{
-		msg->state.offset = msg->state.buf;
-		msg->state.free = msg->state.size;
-	}
-
-	if(
-		/* if what's left is enough to complete the data, don't fetch
-		 * any new data; this makes it possible to return 0 for
-		 * keep-alive connections */
-		(msg->content &&
-			msg->header.length > 0 &&
-			msg->state.total+msg->state.left >= msg->header.length) ||
-		/* add data from the network; recv() will block if no data is
-		 * available; if the server is running HTTP/1.0 or doesn't
-		 * give a Content-Length, this will run until recv() returns 0
-		 * what means that the remote end closed the socket */
-		(bytes = recv( sd, msg->state.offset, msg->state.free, 0 )) > -1 )
-	{
-		char *eod = msg->state.offset+bytes;
-		*eod = 0;
-
-		if( !(msg->state.offset = http_parse_message(
-			msg,
-			msg->state.buf,
-			eod )) )
-			return -1;
-
-		msg->state.left = eod-msg->state.offset;
-		msg->state.total += msg->length;
-
-		if( !bytes &&
-			msg->state.offset > msg->state.last )
+		/* try to parse buffer first if there's still data in it */
+		if( msg->state.left > 0 )
 		{
-			/* recv() returned 0 but there's still data
-			 * to parse left in the buffer */
-			msg->state.last = msg->state.offset;
+			char *parsed_until;
 
-			return msg->state.left;
+			msg->length = 0;
+
+			parsed_until = http_parse_message(
+				msg,
+				msg->state.offset,
+				msg->state.offset+msg->state.left );
+
+			if( parsed_until > msg->state.offset )
+			{
+				msg->state.left -= parsed_until-msg->state.offset;
+				msg->state.offset = parsed_until;
+
+				msg->state.total += msg->length;
+				return 1;
+			}
+		}
+
+		/* make offset begin at the front of the buffer */
+		if( msg->state.offset > msg->state.buf )
+		{
+			if( msg->state.left > 0 )
+				memmove(
+					msg->state.buf,
+					msg->state.offset,
+					msg->state.left );
+
+			msg->state.offset = msg->state.buf;
+		}
+
+		/* wait for and read new data from the network */
+		{
+			char *append = msg->state.offset+msg->state.left;
+			int bytes,
+				size = (msg->state.buf+msg->state.size)-append;
+
+			/* drop half of the buffer if there's no space left */
+			if( size < 1 )
+			{
+				int half = msg->state.size >> 1;
+
+				memcpy(
+					msg->state.buf,
+					msg->state.buf+half,
+					half );
+
+				msg->state.offset = msg->state.buf;
+				msg->state.left = half;
+
+				append = msg->state.offset+msg->state.left;
+				size = msg->state.size-msg->state.left;
+			}
+
+			if( (bytes = recv(
+				sd,
+				append,
+				size,
+				0 )) < 1 )
+				/* bytes == 0 means remote socket was closed */
+				return 0;
+
+			append[bytes] = 0;
+
+			msg->state.left += bytes;
 		}
 	}
 
-	return bytes;
+	return 0;
 }
 
 /**
  * Send HTTP request
  *
- * @param sd - socket
  * @param url - URL
  */
 int http_request( const char *url )
@@ -491,7 +503,7 @@ int http_request( const char *url )
 	if( http_send( sd, "GET /" ) ||
 		http_send( sd, hu->query ) ||
 		http_send( sd, " HTTP/1.1\r\n\
-User-Agent: Mozilla/4.0 (Linux)\r\n\
+User-Agent: "HTTP_USER_AGENT"\r\n\
 Host: " ) ||
 		http_send( sd, hu->host ) ||
 		http_send( sd, "\r\n\
@@ -521,8 +533,7 @@ int http_response( int sd, struct http_message *msg )
 	fd_set r;
 	struct timeval tv;
 
-	/* 360 seconds timeout */
-	tv.tv_sec = 360;
+	tv.tv_sec = HTTP_TIME_OUT;
 	tv.tv_usec = 0;
 
 	FD_ZERO( &r );
