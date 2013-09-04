@@ -77,15 +77,15 @@ If you want to add/tweak some header values or do a POST request, use the low le
 			buf,
 			sizeof( buf ),
 			"\
-POST /%s HTTP/1.1\r\n\
-User-Agent: Mozilla/4.0 (Linux)\r\n\
-Host: %s\r\n\
-Accept: */*\r\n\
-Content-Length: 13\r\n\
-Connection: close\r\n\
-\r\n\
-q=Test&btn=Go\r\n\
-\r\n",
+	POST /%s HTTP/1.1\r\n\
+	User-Agent: Mozilla/4.0 (Linux)\r\n\
+	Host: %s\r\n\
+	Accept: */*\r\n\
+	Content-Length: 13\r\n\
+	Connection: close\r\n\
+	\r\n\
+	q=Test&btn=Go\r\n\
+	\r\n",
 			url->query,
 			url->host );
 
