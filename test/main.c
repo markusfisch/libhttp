@@ -1,3 +1,7 @@
+#ifdef WIN32
+#include <winsock2.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +16,19 @@
  */
 int main( int argc, char **argv )
 {
+#ifdef WIN32
+	{
+		WSADATA wsaData = { 0 };
+		int result;
+
+		if( (result = WSAStartup( MAKEWORD( 2, 2 ), &wsaData )) )
+		{
+			printf( "WSAStartup failed: %d\n", result );
+			return 1;
+		}
+	}
+#endif
+
 	while( --argc )
 	{
 		int sd;
@@ -37,6 +54,10 @@ int main( int argc, char **argv )
 				"error: returned HTTP code %d\n",
 				msg.header.code );
 	}
+
+#ifdef WIN32
+	WSACleanup();
+#endif
 
 	return 0;
 }
