@@ -41,7 +41,7 @@ struct http_url *http_parse_url( const char *url )
 		return NULL;
 
 	buf = (char *)hu+sizeof( struct http_url );
-	strncpy( buf, url, len );
+	memcpy( buf, url, len );
 
 	if( (p = strstr( buf, "://" )) )
 	{
@@ -98,8 +98,8 @@ int http_connect( struct http_url *hu )
 			if( l > sizeof( buf )-1 )
 				return -1;
 
-			host = strncpy( buf, host, l );
-			host[l] = 0;
+			*buf = 0;
+			host = strncat( buf, host, l );
 		}
 
 		if( getaddrinfo( host, hu->protocol, &hints, &si ) )
