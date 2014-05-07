@@ -173,7 +173,7 @@ int http_send( int sd, const char *rq )
  *
  * @param msg - message struct
  */
-void http_cut_trailing_crlf( struct http_message *msg )
+static void http_cut_trailing_crlf( struct http_message *msg )
 {
 	if( msg->state.chunk == 1 &&
 		msg->length > 0 )
@@ -198,7 +198,7 @@ void http_cut_trailing_crlf( struct http_message *msg )
  * @param bod - begin of data, points to the first character
  * @param eod - end of data, points to the terminating NULL character
  */
-char *http_parse_content(
+static char *http_parse_content(
 	struct http_message *msg,
 	char *bod,
 	char *eod )
@@ -300,7 +300,7 @@ char *http_parse_content(
  * @param bod - begin of data, points to the first character
  * @param eod - end of data, points to the terminating NULL character
  */
-char *http_parse_message(
+static char *http_parse_message(
 	struct http_message *msg,
 	char *bod,
 	char *eod )
