@@ -122,7 +122,11 @@ int http_connect( struct http_url *hu )
 			p->ai_addr,
 			p->ai_addrlen ) < 0 )
 		{
+#ifdef WIN32
+			closesocket( sd );
+#else
 			close( sd );
+#endif
 			continue;
 		}
 
@@ -132,7 +136,11 @@ int http_connect( struct http_url *hu )
 	if( !p &&
 		sd > -1 )
 	{
+#ifdef WIN32
+		closesocket( sd );
+#else
 		close( sd );
+#endif
 		sd = -1;
 	}
 
@@ -517,7 +525,11 @@ Accept: */*\r\n\
 Connection: close\r\n\
 \r\n" ) )
 	{
+#ifdef WIN32
+		closesocket( sd );
+#else
 		close( sd );
+#endif
 		return -1;
 	}
 
