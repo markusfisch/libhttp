@@ -1,6 +1,6 @@
 LIBNAME=libhttp
 OBJECTS=http.o
-FLAGS=-O2
+FLAGS=-O2 -Wall -Wextra
 
 .c.o:
 	$(CC) -c $< -o $@ $(FLAGS)

@@ -1,7 +1,7 @@
 BIN=http
 OBJECTS=main.o
 LIBS=-L.. -lhttp
-FLAGS=-O2 -I..
+FLAGS=-O2 -I.. -Wall -Wextra
 
 .c.o: $(OBJECTS)
 	$(CC) -c $< -o $@ $(FLAGS)
