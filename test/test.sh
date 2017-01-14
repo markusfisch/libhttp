@@ -3,16 +3,14 @@
 # Log URL
 #
 # @param 1 - URL
-log()
-{
+log() {
 	echo $1 >> failed
 }
 
 # Test URL
 #
 # @param 1 - URL
-test_url()
-{
+test_url() {
 	local URL=$1
 
 	echo -n "Checking $URL ... "

@@ -29,31 +29,31 @@ http_response():
 
 	#include "http.h"
 
-	int main( int argc, char **argv )
-	{
+	int main(int argc, char **argv) {
 		int sd;
 		struct http_message msg;
 
-		if( !--argc ||
-			(sd = http_request( *++argv )) < 1 )
-		{
-			perror( "http_request" );
+		if (!--argc || (sd = http_request(*++argv)) < 1) {
+			perror("http_request");
 			return -1;
 		}
 
-		memset( &msg, 0, sizeof( msg ) );
+		memset(&msg, 0, sizeof(msg));
 
-		while( http_response( sd, &msg ) > 0 )
-			if( msg.content )
-				write( 1, msg.content, msg.length );
+		while (http_response(sd, &msg) > 0) {
+			if (msg.content) {
+				write(1, msg.content, msg.length);
+			}
+		}
 
-		close( sd );
+		close(sd);
 
-		if( msg.header.code != 200 )
+		if (msg.header.code != 200) {
 			fprintf(
 				stderr,
 				"error: returned HTTP code %d\n",
-				msg.header.code );
+				msg.header.code);
+		}
 
 		return 0;
 	}
@@ -69,13 +69,12 @@ If you want to add/tweak some header values or do a POST request, use the low le
 
 	#include "http.h"
 
-	int post( int sd, struct http_url *url )
-	{
+	int post(int sd, struct http_url *url) {
 		char buf[1024];
 
 		snprintf(
 			buf,
-			sizeof( buf ),
+			sizeof(buf),
 			"\
 	POST /%s HTTP/1.1\r\n\
 	User-Agent: Mozilla/4.0 (Linux)\r\n\
@@ -87,46 +86,47 @@ If you want to add/tweak some header values or do a POST request, use the low le
 	q=Test&btn=Go\r\n\
 	\r\n",
 			url->query,
-			url->host );
+			url->host);
 
-		if( http_send( sd, buf ) )
-		{
-			perror( "http_send" );
+		if (http_send(sd, buf)) {
+			perror("http_send");
 			return -1;
 		}
 
 		return 0;
 	}
 
-	int main( int argc, char **argv )
-	{
+	int main(int argc, char **argv) {
 		struct http_url *url;
 		struct http_message msg;
 		int sd;
 
-		if( !(url = http_parse_url( *++argv )) ||
-			!(sd = http_connect( url )) )
-		{
-			free( url );
-			perror( "http_connect" );
+		if (!(url = http_parse_url(*++argv)) ||
+				!(sd = http_connect(url))) {
+			free(url);
+			perror("http_connect");
 			return -1;
 		}
 
-		memset( &msg, 0, sizeof( msg ) );
+		memset(&msg, 0, sizeof(msg));
 
-		if( !post( sd, url ) )
-			while( http_response( sd, &msg ) > 0 )
-				if( msg.content )
-					write( 1, msg.content, msg.length );
+		if (!post(sd, url)) {
+			while (http_response(sd, &msg) > 0) {
+				if (msg.content) {
+					write(1, msg.content, msg.length);
+				}
+			}
+		}
 
-		free( url );
-		close( sd );
+		free(url);
+		close(sd);
 
-		if( msg.header.code != 200 )
+		if (msg.header.code != 200) {
 			fprintf(
 				stderr,
 				"error: returned HTTP code %d\n",
-				msg.header.code );
+				msg.header.code);
+		}
 
 		return 0;
 	}
