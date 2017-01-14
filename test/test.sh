@@ -70,29 +70,8 @@ LOGALL=${LOGALL:-0}
 (cd .. && make clean && make) &&
 	make clean && make &&
 	for URL in ${@:-\
-www.blender.org/ \
-inkscape.org/ \
-www.gimp.org/ \
-en.wikipedia.org/wiki/Main_Page \
-en.wikipedia.org/wiki/HTTP \
-en.wikipedia.org/wiki/List_of_Advanced_Dungeons_%26_Dragons_2nd_edition_monsters \
-www.mozilla.org/de/about/ \
-www.cgsociety.org/ \
-www.wired.com \
-developer.android.com/index.html \
-www.ibm.com/us/en/ \
-www.adobe.com \
 www.apple.com \
-www.samsung.com/de/ \
-www.microsoft.com/en-us/default.aspx \
-www.motogp.com \
-stackoverflow.com \
-square.github.io/dagger/ \
-www.spiegel.de \
-www.golem.de \
-www.welt.de \
-www.chip.de \
-www.kicker.de \
+hhsw.de \
 markusfisch.de}
 do
 	if [ -r $URL ]
