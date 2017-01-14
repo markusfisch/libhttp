@@ -1,3 +1,5 @@
 *.swp
 *.o
+*.a
+http
 .aside
