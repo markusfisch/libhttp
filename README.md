@@ -140,12 +140,6 @@ There's a bash script to test any URL list against libhttp:
 
 If you find bugs, please report them.
 
-License
--------
-
-libhttp is licensed under the [MIT license][4].
-
 [1]: https://en.wikipedia.org/wiki/HTTP
 [2]: https://en.wikipedia.org/wiki/HTTP_Secure
 [3]: https://github.com/bagder/curl
-[4]: http://opensource.org/licenses/mit-license.php
