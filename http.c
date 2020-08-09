@@ -391,9 +391,8 @@ int http_read(int sd, struct http_message *msg) {
 		msg->header.length = -1;
 	}
 
-	if (msg->state.total == msg->header.length)
+	if (msg->state.total == msg->header.length) {
 		/* return 0 for keep-alive connections */
-	{
 		return 0;
 	}
 
